@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>金門中秋博狀元餅 - 華語教學互動遊戲</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
+        
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #fdf6e3;
+            background-image: url('data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23f5e1a4" fill-opacity="0.4"%3E%3Cpath d="M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');
+        }
+
+        /* 骰子樣式 */
+        .dice-container {
+            perspective: 1000px;
+        }
+        .dice {
+            width: 64px;
+            height: 64px;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.1), 0 5px 15px rgba(0,0,0,0.2);
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            padding: 8px;
+            gap: 4px;
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            place-items: center;
+        }
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #333;
+            visibility: hidden;
+        }
+        .dot.red {
+            background-color: #e53e3e; /* 紅色點點 (1和4) */
+        }
+
+        /* 各點數佈局 */
+        .dice[data-value="1"] .dot:nth-child(5) { visibility: visible; transform: scale(1.8); }
+        
+        .dice[data-value="2"] .dot:nth-child(1),
+        .dice[data-value="2"] .dot:nth-child(9) { visibility: visible; }
+        
+        .dice[data-value="3"] .dot:nth-child(1),
+        .dice[data-value="3"] .dot:nth-child(5),
+        .dice[data-value="3"] .dot:nth-child(9) { visibility: visible; }
+        
+        .dice[data-value="4"] .dot:nth-child(1),
+        .dice[data-value="4"] .dot:nth-child(3),
+        .dice[data-value="4"] .dot:nth-child(7),
+        .dice[data-value="4"] .dot:nth-child(9) { visibility: visible; }
+        
+        .dice[data-value="5"] .dot:nth-child(1),
+        .dice[data-value="5"] .dot:nth-child(3),
+        .dice[data-value="5"] .dot:nth-child(5),
+        .dice[data-value="5"] .dot:nth-child(7),
+        .dice[data-value="5"] .dot:nth-child(9) { visibility: visible; }
+        
+        .dice[data-value="6"] .dot:nth-child(1),
+        .dice[data-value="6"] .dot:nth-child(4),
+        .dice[data-value="6"] .dot:nth-child(7),
+        .dice[data-value="6"] .dot:nth-child(3),
+        .dice[data-value="6"] .dot:nth-child(6),
+        .dice[data-value="6"] .dot:nth-child(9) { visibility: visible; }
+
+        /* 擲骰子動畫 */
+        @keyframes roll {
+            0% { transform: rotate(0deg) scale(1) translateY(0); }
+            25% { transform: rotate(90deg) scale(1.2) translateY(-20px); }
+            50% { transform: rotate(180deg) scale(0.8) translateY(10px); }
+            75% { transform: rotate(270deg) scale(1.1) translateY(-10px); }
+            100% { transform: rotate(360deg) scale(1) translateY(0); }
+        }
+        .rolling {
+            animation: roll 0.6s ease-in-out;
+        }
+
+        /* 大碗公 */
+        .bowl {
+            background: radial-gradient(circle at 30% 30%, #a02020, #701010);
+            border: 8px solid #4a0d0d;
+            box-shadow: inset 0 20px 40px rgba(0,0,0,0.6), 0 10px 20px rgba(0,0,0,0.3);
+            border-radius: 50%;
+        }
+
+        /* 煙火動畫 */
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #f00;
+            animation: confettiFall 3s linear infinite;
+        }
+        @keyframes confettiFall {
+            0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+    </style>
+</head>
+<body class="min-h-screen text-gray-800 flex flex-col items-center py-8 px-4 relative overflow-hidden">
+
+    <!-- 標題區塊 -->
+    <header class="text-center mb-8 relative z-10 w-full max-w-4xl">
+        <div class="bg-red-600 text-white rounded-3xl p-6 shadow-xl border-4 border-yellow-400">
+            <h1 class="text-4xl md:text-5xl font-black mb-2 tracking-widest text-yellow-300 drop-shadow-md">中秋博狀元餅</h1>
+            <p class="text-xl md:text-2xl font-bold">一起認識金門文化！Let's play Bo-Bing!</p>
+        </div>
+    </header>
+
+    <!-- 主視覺與遊戲區 -->
+    <main class="w-full max-w-4xl flex flex-col md:flex-row gap-8 relative z-10">
+        
+        <!-- 左側：文化介紹與生詞 (結合《學華語向前走》風格) -->
+        <div class="md:w-1/3 space-y-6">
+            <div class="bg-white rounded-2xl p-6 shadow-lg border-t-8 border-orange-400 relative">
+                <div class="absolute -top-10 -right-6 text-6xl">🦦</div>
+                <h2 class="text-2xl font-bold text-orange-600 mb-3 border-b-2 border-orange-200 pb-2">
+                    <i class="fas fa-book-open mr-2"></i>文化小教室
+                </h2>
+                <p class="text-lg leading-relaxed mb-4">
+                    <b>博餅 (Bo-Bing)</b> 是臺灣<span class="text-red-600 font-bold">金門</span>特有的中秋節遊戲喔！三百多年前，鄭成功的軍隊為了讓士兵忘記想家的心情，發明了這個丟骰子拿月餅的遊戲。
+                </p>
+            </div>
+
+            <!-- 獎項說明 (視覺化圖表) -->
+            <div class="bg-red-700 rounded-2xl p-1 shadow-lg border-4 border-yellow-400">
+                <div class="bg-[#fdf6e3] rounded-xl p-4 md:p-5 border-2 border-red-800 h-full">
+                    <h2 class="text-2xl font-black text-red-700 mb-4 text-center border-b-2 border-red-200 pb-2">
+                        <i class="fas fa-trophy mr-2 text-yellow-500"></i>博餅規則圖表
+                    </h2>
+                    <div class="space-y-2">
+                        <!-- 狀元 -->
+                        <div class="flex items-center justify-between bg-yellow-100 p-2 rounded-lg border border-yellow-400 shadow-sm">
+                            <div class="flex flex-col items-center w-1/4">
+                                <span class="text-xl font-bold text-red-600">狀元</span>
+                            </div>
+                            <div class="flex justify-center w-1/2 text-2xl tracking-widest text-red-600 font-bold">
+                                ⚃⚃⚃⚃<span class="text-lg ml-1">+</span>
+                            </div>
+                            <div class="w-1/4 text-right font-bold text-gray-700 text-sm">4個四<br>以上</div>
+                        </div>
+                        <!-- 分平 -->
+                        <div class="flex items-center justify-between bg-white p-2 rounded-lg border border-gray-300 shadow-sm">
+                            <div class="flex flex-col items-center w-1/4">
+                                <span class="text-lg font-bold text-pink-600">分平</span>
+                                <span class="text-xs text-gray-500">榜眼</span>
+                            </div>
+                            <div class="flex justify-center w-1/2 text-xl tracking-widest">
+                                <span class="text-red-600">⚀</span>⚁⚂<span class="text-red-600">⚃</span>⚄⚅
+                            </div>
+                            <div class="w-1/4 text-right font-bold text-gray-700 text-sm">1到6<br>各一個</div>
+                        </div>
+                        <!-- 三紅 -->
+                        <div class="flex items-center justify-between bg-white p-2 rounded-lg border border-gray-300 shadow-sm">
+                            <div class="flex flex-col items-center w-1/4">
+                                <span class="text-lg font-bold text-orange-500">三紅</span>
+                                <span class="text-xs text-gray-500">探花</span>
+                            </div>
+                            <div class="flex justify-center w-1/2 text-2xl tracking-widest text-red-600">
+                                ⚃⚃⚃
+                            </div>
+                            <div class="w-1/4 text-right font-bold text-gray-700 text-sm">3個四</div>
+                        </div>
+                        <!-- 四進 -->
+                        <div class="flex items-center justify-between bg-white p-2 rounded-lg border border-gray-300 shadow-sm">
+                            <div class="flex flex-col items-center w-1/4">
+                                <span class="text-lg font-bold text-blue-600">四進</span>
+                                <span class="text-xs text-gray-500">進士</span>
+                            </div>
+                            <div class="flex justify-center w-1/2 text-2xl tracking-widest text-gray-800">
+                                ⚁⚁⚁⚁
+                            </div>
+                            <div class="w-1/4 text-right font-bold text-gray-700 text-sm">4個<br>同數字</div>
+                        </div>
+                        <!-- 二舉 -->
+                        <div class="flex items-center justify-between bg-white p-2 rounded-lg border border-gray-300 shadow-sm">
+                            <div class="flex flex-col items-center w-1/4">
+                                <span class="text-lg font-bold text-green-600">二舉</span>
+                                <span class="text-xs text-gray-500">舉人</span>
+                            </div>
+                            <div class="flex justify-center w-1/2 text-2xl tracking-widest text-red-600">
+                                ⚃⚃
+                            </div>
+                            <div class="w-1/4 text-right font-bold text-gray-700 text-sm">2個四</div>
+                        </div>
+                        <!-- 一秀 -->
+                        <div class="flex items-center justify-between bg-white p-2 rounded-lg border border-gray-300 shadow-sm">
+                            <div class="flex flex-col items-center w-1/4">
+                                <span class="text-lg font-bold text-gray-600">一秀</span>
+                                <span class="text-xs text-gray-500">秀才</span>
+                            </div>
+                            <div class="flex justify-center w-1/2 text-2xl tracking-widest text-red-600">
+                                ⚃
+                            </div>
+                            <div class="w-1/4 text-right font-bold text-gray-700 text-sm">1個四</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右側：遊戲互動區 -->
+        <div class="md:w-2/3 flex flex-col items-center justify-center bg-white rounded-3xl p-8 shadow-xl border-4 border-red-100">
+            
+            <!-- 大碗公與骰子 -->
+            <div class="bowl w-64 h-64 md:w-80 md:h-80 relative flex flex-wrap justify-center items-center content-center gap-4 p-8 mb-8">
+                <!-- 6顆骰子 -->
+                <div class="dice-container"><div class="dice" id="dice-0" data-value="1"><div class="dot red"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot red"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
+                <div class="dice-container"><div class="dice" id="dice-1" data-value="2"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
+                <div class="dice-container"><div class="dice" id="dice-2" data-value="3"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
+                <div class="dice-container"><div class="dice" id="dice-3" data-value="4"><div class="dot red"></div><div class="dot"></div><div class="dot red"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot red"></div><div class="dot"></div><div class="dot red"></div></div></div>
+                <div class="dice-container"><div class="dice" id="dice-4" data-value="5"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
+                <div class="dice-container"><div class="dice" id="dice-5" data-value="6"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
+            </div>
+
+            <!-- 操作按鈕 -->
+            <button id="roll-btn" class="bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white font-black text-3xl py-4 px-12 rounded-full shadow-lg transform transition hover:scale-105 active:scale-95 mb-6">
+                🎲 擲骰子 (Roll!)
+            </button>
+
+            <!-- 結果顯示區 -->
+            <div id="result-box" class="w-full bg-yellow-100 rounded-2xl p-6 text-center shadow-inner hidden border-2 border-yellow-300">
+                <h3 id="result-title" class="text-3xl font-black text-red-600 mb-2"></h3>
+                <p id="result-desc" class="text-xl font-bold text-gray-800 mb-2"></p>
+                <div id="result-prize" class="text-5xl mt-4 animate-bounce"></div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- 慶祝特效容器 -->
+    <div id="confetti-container" class="fixed inset-0 pointer-events-none z-50 overflow-hidden"></div>
+
+    <script>
+        // 初始化骰子點數 (將1和4設為紅色)
+        function initDice() {
+            document.querySelectorAll('.dice').forEach(dice => {
+                const val = dice.getAttribute('data-value');
+                const dots = dice.querySelectorAll('.dot');
+                dots.forEach(dot => dot.classList.remove('red'));
+                if (val == 1) dots[4].classList.add('red');
+                if (val == 4) {
+                    dots[0].classList.add('red');
+                    dots[2].classList.add('red');
+                    dots[6].classList.add('red');
+                    dots[8].classList.add('red');
+                }
+            });
+        }
+        initDice();
+
+        const rollBtn = document.getElementById('roll-btn');
+        const resultBox = document.getElementById('result-box');
+        const resultTitle = document.getElementById('result-title');
+        const resultDesc = document.getElementById('result-desc');
+        const resultPrize = document.getElementById('result-prize');
+        const confettiContainer = document.getElementById('confetti-container');
+
+        // 音效 (可選，這裡用簡單的 beep 替代，實際教學可自行加入 mp3)
+        const playSound = () => {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(600, ctx.currentTime + 0.1);
+                osc.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.1);
+            } catch(e) {}
+        };
+
+        // 產生煙火特效
+        function createConfetti() {
+            confettiContainer.innerHTML = '';
+            const colors = ['#fce18a', '#ff726d', '#b48def', '#f4306d', '#42a5f5', '#66bb6a'];
+            for(let i=0; i<50; i++) {
+                const conf = document.createElement('div');
+                conf.className = 'confetti';
+                conf.style.left = Math.random() * 100 + 'vw';
+                conf.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                conf.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                conf.style.animationDelay = (Math.random() * 1) + 's';
+                confettiContainer.appendChild(conf);
+            }
+            setTimeout(() => { confettiContainer.innerHTML = ''; }, 4000);
+        }
+
+        // 判斷博餅結果
+        function evaluateBoBing(diceArr) {
+            const counts = {1:0, 2:0, 3:0, 4:0, 5:0, 6:0};
+            diceArr.forEach(d => counts[d]++);
+            
+            const fours = counts[4];
+            
+            // 判斷順序由大到小
+            if (fours >= 4) {
+                if (fours === 6) return { title: '六杯紅 (狀元) 🏆', desc: '太不可思議了！最大的幸運！', prize: '🥮🥮 大狀元餅 🥮🥮', confetti: true };
+                if (fours === 4 && counts[1] === 2) return { title: '狀元插金花 🏆', desc: '超級無敵厲害！', prize: '🥮🥮 超大狀元餅', confetti: true };
+                return { title: '狀元 🏆', desc: '太棒了！你考上狀元了！', prize: '🥮 狀元月餅', confetti: true };
+            }
+            if (Object.values(counts).some(c => c === 6)) return { title: '六杯黑 (狀元) 🏆', desc: '六六大順！', prize: '🥮 狀元月餅', confetti: true };
+            if (Object.values(counts).some(c => c === 5)) return { title: '五子 (狀元) 🏆', desc: '好厲害的運氣！', prize: '🥮 狀元月餅', confetti: true };
+            
+            // 檢查是否為 1,2,3,4,5,6
+            let isStraight = true;
+            for(let i=1; i<=6; i++) { if(counts[i] !== 1) isStraight = false; }
+            if (isStraight) return { title: '榜眼 (分平) 🥈', desc: '順順利利，數字連連看！', prize: '🥮 大月餅', confetti: true };
+            
+            if (fours === 3) return { title: '探花 (三紅) 🥉', desc: '三個紅色的四，很棒喔！', prize: '🥮 中月餅', confetti: false };
+            
+            if (Object.values(counts).some(c => c === 4)) return { title: '進士 (四進) 🎖️', desc: '四個一樣的數字！', prize: '👏 棒棒！', confetti: false };
+            
+            if (fours === 2) return { title: '舉人 (二舉) 🏅', desc: '兩個四，繼續加油！', prize: '👍 讚！', confetti: false };
+            if (fours === 1) return { title: '秀才 (一秀) 🎖️', desc: '一個四，有一個好的開始！', prize: '⭐ 不錯喔！', confetti: false };
+            
+            return { title: '沒中 (再接再厲) 🐢', desc: '哎呀，沒有紅色的四，再試一次吧！', prize: '💪', confetti: false };
+        }
+
+        rollBtn.addEventListener('click', () => {
+            playSound();
+            rollBtn.disabled = true;
+            rollBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            resultBox.classList.add('hidden');
+            confettiContainer.innerHTML = '';
+
+            const diceElements = document.querySelectorAll('.dice');
+            const newValues = [];
+
+            // 加上旋轉動畫並產生隨機數字
+            diceElements.forEach((dice, index) => {
+                dice.classList.add('rolling');
+                
+                // 為了讓動畫更有層次，稍微錯開動畫時間
+                dice.style.animationDelay = `${index * 0.05}s`;
+
+                const rand = Math.floor(Math.random() * 6) + 1;
+                newValues.push(rand);
+            });
+
+            // 等待動畫結束
+            setTimeout(() => {
+                diceElements.forEach((dice, index) => {
+                    dice.classList.remove('rolling');
+                    dice.style.animationDelay = '0s';
+                    dice.setAttribute('data-value', newValues[index]);
+                });
+                initDice(); // 重新設定紅色點點
+
+                // 計算成績
+                const result = evaluateBoBing(newValues);
+                
+                resultTitle.textContent = result.title;
+                resultDesc.textContent = result.desc;
+                resultPrize.textContent = result.prize;
+                
+                resultBox.classList.remove('hidden');
+                
+                // 動態效果：小彈出
+                resultBox.classList.add('animate-pulse');
+                setTimeout(() => resultBox.classList.remove('animate-pulse'), 500);
+
+                if (result.confetti) {
+                    createConfetti();
+                }
+
+                rollBtn.disabled = false;
+                rollBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+
+            }, 800); // 配合動畫時間
+        });
+    </script>
+</body>
+</html>
